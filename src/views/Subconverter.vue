@@ -550,7 +550,7 @@ export default {
     applyDefaults() {
       const backendOptions = this.options.backendOptions || [];
       const defaultBackend =
-        CONSTANTS.DEFAULT_BACKEND_OPTION ||
+        CONSTANTS.DEFAULT_BACKEND ||
         (backendOptions[0] && backendOptions[0].value);
 
       if (defaultBackend && !this.form.customBackend) {
