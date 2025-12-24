@@ -22,6 +22,24 @@ jobs:
         node-version: 22
         cache: "yarn"
 
+    - name: Generate env file from GitHub Variables
+      env:
+        VUE_APP_PROJECT: ${{ vars.VUE_APP_PROJECT }}
+        VUE_APP_BOT_LINK: ${{ vars.VUE_APP_BOT_LINK }}
+        VUE_APP_BACKEND_RELEASE: ${{ vars.VUE_APP_BACKEND_RELEASE }}
+        VUE_APP_SUBCONVERTER_REMOTE_CONFIG: ${{ vars.VUE_APP_SUBCONVERTER_REMOTE_CONFIG }}
+        VUE_APP_SUBCONVERTER_DOC_ADVANCED: ${{ vars.VUE_APP_SUBCONVERTER_DOC_ADVANCED }}
+        VUE_APP_SUBCONVERTER_DEFAULT_BACKEND: ${{ vars.VUE_APP_SUBCONVERTER_DEFAULT_BACKEND }}
+        VUE_APP_DEFAULT_BACKEND_OPTION: ${{ vars.VUE_APP_DEFAULT_BACKEND_OPTION }}
+        VUE_APP_MYURLS_API: ${{ vars.VUE_APP_MYURLS_API }}
+        VUE_APP_CONFIG_UPLOAD_API: ${{ vars.VUE_APP_CONFIG_UPLOAD_API }}
+        VUE_APP_USE_STORAGE: ${{ vars.VUE_APP_USE_STORAGE }}
+        VUE_APP_CACHE_TTL: ${{ vars.VUE_APP_CACHE_TTL }}
+        VUE_APP_REMOTE_CONFIGS: ${{ vars.VUE_APP_REMOTE_CONFIGS }}
+        VUE_APP_DEFAULT_REMOTE_CONFIG: ${{ vars.VUE_APP_DEFAULT_REMOTE_CONFIG }}
+        VUE_APP_BACKEND_OPTIONS: ${{ vars.VUE_APP_BACKEND_OPTIONS }}
+      run: node scripts/generate-env.js
+
     - name: Get dependencies and build
       run: |
         yarn install

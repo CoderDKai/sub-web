@@ -1,5 +1,48 @@
-// 远程配置选项
-export const REMOTE_CONFIGS = [
+import { parseJsonEnv } from './env-utils';
+
+const normalizeRemoteOption = (option) => {
+  if (!option) {
+    return null;
+  }
+
+  if (typeof option === 'string') {
+    return { label: option, value: option };
+  }
+
+  if (typeof option === 'object') {
+    const value = option.value || option.label;
+    if (!value) {
+      return null;
+    }
+    return {
+      label: option.label || value,
+      value
+    };
+  }
+
+  return null;
+};
+
+const normalizeRemoteGroup = (group) => {
+  if (!group) {
+    return null;
+  }
+
+  const options = Array.isArray(group.options)
+    ? group.options.map(normalizeRemoteOption).filter(Boolean)
+    : [];
+
+  if (!options.length) {
+    return null;
+  }
+
+  return {
+    label: group.label || group.name || 'Default',
+    options
+  };
+};
+
+const DEFAULT_REMOTE_CONFIGS = [
   {
     label: "universal",
     options: [
@@ -33,3 +76,13 @@ export const REMOTE_CONFIGS = [
     ]
   }
 ];
+
+// 远程配置选项
+const envRemoteConfigs = parseJsonEnv('VUE_APP_REMOTE_CONFIGS', DEFAULT_REMOTE_CONFIGS);
+const normalizedEnvConfigs = Array.isArray(envRemoteConfigs)
+  ? envRemoteConfigs.map(normalizeRemoteGroup).filter(Boolean)
+  : DEFAULT_REMOTE_CONFIGS.map(normalizeRemoteGroup).filter(Boolean);
+
+const fallbackConfigs = DEFAULT_REMOTE_CONFIGS.map(normalizeRemoteGroup).filter(Boolean);
+
+export const REMOTE_CONFIGS = normalizedEnvConfigs.length ? normalizedEnvConfigs : fallbackConfigs;

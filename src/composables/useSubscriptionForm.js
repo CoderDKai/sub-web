@@ -11,7 +11,7 @@ export function useSubscriptionForm() {
       sourceSubUrl: "",
       clientType: "",
       customBackend: "",
-      remoteConfig: "",
+      remoteConfig: null,
       excludeRemarks: "",
       includeRemarks: "",
       filename: "",

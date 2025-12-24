@@ -77,9 +77,13 @@ export function useSubscription() {
   const buildAdvancedParams = (form, customParams, needUdp) => {
     let params = "";
 
+    const remoteConfigValue = form.remoteConfig && typeof form.remoteConfig === 'object'
+      ? form.remoteConfig.value
+      : form.remoteConfig;
+
     // 远程配置
-    if (form.remoteConfig) {
-      params += "&config=" + encodeURIComponent(form.remoteConfig);
+    if (remoteConfigValue) {
+      params += "&config=" + encodeURIComponent(remoteConfigValue);
     }
 
     // 过滤参数

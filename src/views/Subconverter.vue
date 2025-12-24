@@ -27,19 +27,51 @@
 
               <div v-if="advanced === '2'">
                 <el-form-item label="后端地址:">
-                  <el-autocomplete style="width: 100%" v-model="form.customBackend" :fetch-suggestions="backendSearch"
-                    placeholder="动动小手，（建议）自行搭建后端服务。例：http://127.0.0.1:25500/sub?">
-                    <el-button slot="append" @click="gotoGayhub" icon="el-icon-link">前往项目仓库</el-button>
-                  </el-autocomplete>
+                  <el-row type="flex" :gutter="10">
+                    <el-col :span="18">
+                      <el-select
+                        v-model="form.customBackend"
+                        filterable
+                        allow-create
+                        default-first-option
+                        placeholder="动动小手，（建议）自行搭建后端服务。例：http://127.0.0.1:25500/sub?"
+                        style="width: 100%">
+                        <el-option
+                          v-for="backend in options.backendOptions"
+                          :key="backend.value"
+                          :label="backend.label || backend.value"
+                          :value="backend.value" />
+                      </el-select>
+                    </el-col>
+                    <el-col :span="6">
+                      <el-button @click="gotoGayhub" icon="el-icon-link" style="width: 100%">前往项目仓库</el-button>
+                    </el-col>
+                  </el-row>
                 </el-form-item>
                 <el-form-item label="远程配置:">
-                  <el-select v-model="form.remoteConfig" allow-create filterable placeholder="请选择" style="width: 100%">
-                    <el-option-group v-for="group in options.remoteConfig" :key="group.label" :label="group.label">
-                      <el-option v-for="item in group.options" :key="item.value" :label="item.label"
-                        :value="item.value"></el-option>
-                    </el-option-group>
-                    <el-button slot="append" @click="gotoRemoteConfig" icon="el-icon-link">配置示例</el-button>
-                  </el-select>
+                  <el-row type="flex" :gutter="10">
+                    <el-col :span="18">
+                      <el-select
+                        v-model="form.remoteConfig"
+                        value-key="value"
+                        allow-create
+                        filterable
+                        placeholder="请选择"
+                        style="width: 100%"
+                        @change="handleRemoteConfigChange">
+                        <el-option-group v-for="group in options.remoteConfig" :key="group.label" :label="group.label">
+                          <el-option
+                            v-for="item in group.options"
+                            :key="item.value"
+                            :label="item.label || item.value"
+                            :value="item"></el-option>
+                        </el-option-group>
+                      </el-select>
+                    </el-col>
+                    <el-col :span="6">
+                      <el-button @click="gotoRemoteConfig" icon="el-icon-link" style="width: 100%">配置示例</el-button>
+                    </el-col>
+                  </el-row>
                 </el-form-item>
                 <el-form-item label="Include:">
                   <el-input v-model="form.includeRemarks" placeholder="节点名包含的关键字，支持正则" />
@@ -209,6 +241,7 @@
 import { CONSTANTS } from '@/config/constants';
 import { CLIENT_TYPES } from '@/config/client-types';
 import { REMOTE_CONFIGS } from '@/config/remote-configs';
+import { BACKEND_OPTIONS } from '@/config/backend-options';
 
 // 导入Composables
 import { useSubscriptionForm, addCustomParam, saveSubUrl as saveSubscriptionUrl } from '@/composables/useSubscriptionForm';
@@ -240,7 +273,7 @@ export default {
       // 配置选项
       options: {
         clientTypes: CLIENT_TYPES,
-        backendOptions: [{ value: "http://127.0.0.1:25500/sub?" }],
+        backendOptions: BACKEND_OPTIONS,
         remoteConfig: REMOTE_CONFIGS
       },
 
@@ -301,6 +334,7 @@ export default {
   },
   mounted() {
     this.form.clientType = CONSTANTS.DEFAULT_CLIENT_TYPE;
+    this.applyDefaults();
     this.notify();
     this.getBackendVersion();
   },
@@ -319,6 +353,74 @@ export default {
 
     gotoRemoteConfig() {
       window.open(CONSTANTS.REMOTE_CONFIG_SAMPLE);
+    },
+
+    handleRemoteConfigChange(value) {
+      const normalized = this.normalizeRemoteConfigValue(value);
+      this.ensureRemoteConfigOption(normalized);
+      this.form.remoteConfig = normalized;
+    },
+
+    normalizeRemoteConfigValue(value) {
+      if (!value) {
+        return null;
+      }
+
+      // 如果已是对象，补全 label 即可
+      if (typeof value === 'object') {
+        return {
+          label: value.label || value.value,
+          value: value.value || value.label
+        };
+      }
+
+      const matched = this.findRemoteConfigByValue(value);
+      if (matched) {
+        return matched;
+      }
+
+      // 自定义输入的场景
+      return { label: value, value };
+    },
+
+    findRemoteConfigByValue(targetValue) {
+      if (!targetValue) {
+        return null;
+      }
+
+      for (const group of this.options.remoteConfig || []) {
+        for (const option of group.options || []) {
+          if (option.value === targetValue) {
+            return option;
+          }
+        }
+      }
+      return null;
+    },
+
+    getRemoteConfigValue(remoteConfig) {
+      if (!remoteConfig) {
+        return "";
+      }
+      return typeof remoteConfig === 'object' ? remoteConfig.value : remoteConfig;
+    },
+
+    ensureRemoteConfigOption(option) {
+      if (!option || !option.value) {
+        return;
+      }
+
+      const exists = this.findRemoteConfigByValue(option.value);
+      if (exists) {
+        return;
+      }
+
+      let customGroup = (this.options.remoteConfig || []).find(group => group.label === 'Custom');
+      if (!customGroup) {
+        customGroup = { label: 'Custom', options: [] };
+        this.options.remoteConfig.push(customGroup);
+      }
+      customGroup.options.push(option);
     },
 
     clashInstall() {
@@ -384,8 +486,8 @@ export default {
           const result = ConfigUploadService.handleUploadSuccess(res, this.$copyText, this.$message);
           if (result.success) {
             // 自动填充至『表单-远程配置』
-            this.form.remoteConfig = result.url;
-            this.$copyText(this.form.remoteConfig);
+            this.handleRemoteConfigChange(result.url);
+            this.$copyText(this.getRemoteConfigValue(this.form.remoteConfig));
             this.dialogUploadConfigVisible = false;
             this.uploadConfig = "";
           }
@@ -435,27 +537,38 @@ export default {
         }
       ).then(() => {
         this.loading = false;
+        this.handleRemoteConfigChange(this.form.remoteConfig);
       }).catch(() => {
         this.loading = false;
       });
     },
 
-    backendSearch(queryString, cb) {
-      const results = this.backendSearchSuggestions(queryString, this.options.backendOptions);
-      cb(results);
-    },
-
-    backendSearchSuggestions(queryString, backends) {
-      if (queryString) {
-        return backends.filter(backend => {
-          return backend.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0;
-        });
-      }
-      return backends;
-    },
-
     async getBackendVersion() {
       this.backendVersion = await BackendService.getBackendVersion(this.$axios);
+    },
+
+    applyDefaults() {
+      const backendOptions = this.options.backendOptions || [];
+      const defaultBackend =
+        CONSTANTS.DEFAULT_BACKEND_OPTION ||
+        (backendOptions[0] && backendOptions[0].value);
+
+      if (defaultBackend && !this.form.customBackend) {
+        this.form.customBackend = defaultBackend;
+      }
+
+      const remoteConfigGroups = this.options.remoteConfig || [];
+      const firstRemote =
+        remoteConfigGroups[0] &&
+        remoteConfigGroups[0].options &&
+        remoteConfigGroups[0].options[0];
+      const defaultRemoteValue = CONSTANTS.DEFAULT_REMOTE_CONFIG || (firstRemote && firstRemote.value);
+      const defaultRemote = this.normalizeRemoteConfigValue(defaultRemoteValue);
+
+      if (defaultRemote && !this.form.remoteConfig) {
+        this.ensureRemoteConfigOption(defaultRemote);
+        this.form.remoteConfig = defaultRemote;
+      }
     },
 
     notify() {
