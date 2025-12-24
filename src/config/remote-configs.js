@@ -1,5 +1,5 @@
 // 远程配置选项
-export const REMOTE_CONFIGS = [
+let remoteConfigs = [
   {
     label: "universal",
     options: [
@@ -33,3 +33,14 @@ export const REMOTE_CONFIGS = [
     ]
   }
 ];
+
+if (process.env.VUE_APP_REMOTE_CONFIG) {
+  try {
+    remoteConfigs = JSON.parse(process.env.VUE_APP_REMOTE_CONFIG);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("Failed to parse VUE_APP_REMOTE_CONFIG", e);
+  }
+}
+
+export const REMOTE_CONFIGS = remoteConfigs;

@@ -209,6 +209,7 @@
 import { CONSTANTS } from '@/config/constants';
 import { CLIENT_TYPES } from '@/config/client-types';
 import { REMOTE_CONFIGS } from '@/config/remote-configs';
+import { BACKEND_CONFIGS } from '@/config/backend-config';
 
 // 导入Composables
 import { useSubscriptionForm, addCustomParam, saveSubUrl as saveSubscriptionUrl } from '@/composables/useSubscriptionForm';
@@ -240,7 +241,7 @@ export default {
       // 配置选项
       options: {
         clientTypes: CLIENT_TYPES,
-        backendOptions: [{ value: "http://127.0.0.1:25500/sub?" }],
+        backendOptions: BACKEND_CONFIGS,
         remoteConfig: REMOTE_CONFIGS
       },
 
@@ -301,6 +302,7 @@ export default {
   },
   mounted() {
     this.form.clientType = CONSTANTS.DEFAULT_CLIENT_TYPE;
+    this.form.remoteConfig = CONSTANTS.DEFAULT_REMOTE_CONFIG || "";
     this.notify();
     this.getBackendVersion();
   },
